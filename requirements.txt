@@ -1,4 +1,3 @@
 # add all required libs here
-numpy
+MetaTrader5
 pandas
-zmq
