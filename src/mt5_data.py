@@ -93,6 +93,86 @@ class MetaTraderData:
         result = result.set_index('deep')
         result = result.sort_index(ascending=False)
 
+        return result
+
+    def open_buy(self, symbol, vol) -> tuple[float, int]:
+
+        price = mt5.symbol_info_tick(symbol).ask
+
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": vol,
+            "type": mt5.ORDER_TYPE_BUY,
+            "price": price,
+            "magic": 234000,
+            "comment": "python script open",
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_IOC, #Tem que tomar cuidado com essa flag aqui, pq ela executa dependendo do volume
+        }
+
+        send = mt5.order_send(request)
+
+        ask_filled = send[4]
+        order_number = send[2]
+        
+        return [ask_filled, order_number]
+
+    def open_sell(self, symbol, vol) -> tuple[float, int]:
+
+        price = mt5.symbol_info_tick(symbol).bid
+
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": vol,
+            "type": mt5.ORDER_TYPE_SELL,
+            "price": price,
+            "magic": 234000,
+            "comment": "python script open",
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_IOC, #Tem que tomar cuidado com essa flag aqui, pq ela executa dependendo do volume
+        }
+
+        send = mt5.order_send(request)
+
+        bid_filled = send[4]
+        order_number = send[2]
+        
+        return [bid_filled, order_number]
+
+    def close_position(self, symbol) -> dict:
+
+        #type = 0 : BUY
+        #type = 1 : SELL
+
+        pos_info = mt5.positions_get(symbol = symbol)[0]
+
+        data = {'type':pos_info[5], 'volume':pos_info[9], 'price_open':pos_info[10], 
+                    'price_current':pos_info[13], 'profit_percent':pos_info[15]}
+        
+        #close buy position
+        if(data['type'] == 0): 
+            
+            self.open_sell(symbol, data['volume'])
+            return data
+
+        if (data['type'] == 1):
+            
+            self.open_buy(symbol, data['volume'])
+            return data
+        
+        return None
+
+        
+
+        
+
+
+
+
+
+    
         
 
 
