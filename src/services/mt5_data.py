@@ -111,7 +111,7 @@ class MetaTraderData:
             "magic": 234000,
             "comment": "python script open",
             "type_time": mt5.ORDER_TIME_GTC,
-            "type_filling": mt5.ORDER_FILLING_IOC, #Tem que tomar cuidado com essa flag aqui, pq ela executa dependendo do volume
+            "type_filling": mt5.ORDER_FILLING_IOC, 
         }
 
         send = mt5.order_send(request)
