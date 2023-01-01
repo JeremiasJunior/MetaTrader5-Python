@@ -4,7 +4,7 @@ from datetime import datetime
 import numpy as np
 
 
-_login = 10041983
+_login = 10084329
 _password = 'Dy41KitG'
 _server = 'B2Broker-MetaTrader5'
 
@@ -39,7 +39,7 @@ class MetaTraderData:
         if(timeframe == 'M1'): return mt5.TIMEFRAME_M1
         if(timeframe == 'M5'): return mt5.TIMEFRAME_M5
         if(timeframe == 'M10'): return mt5.TIMEFRAME_M10
-        if(timeframe == 'M30'): return mt5.TIMEFRAME_M15
+        if(timeframe == 'M30'): return mt5.TIMEFRAME_M30
         if(timeframe == 'H1'): return mt5.TIMEFRAME_H1
         if(timeframe == 'M12'): return mt5.TIMEFRAME_H12
         if(timeframe == 'D1'): return mt5.TIMEFRAME_D1
@@ -49,6 +49,8 @@ class MetaTraderData:
 
         utc_from = datetime.fromisoformat(from_date)
         utc_to = datetime.fromisoformat(to_date)
+
+
 
         rates = mt5.copy_rates_range(symbol, self.TIMEFRAME(timeframe), utc_from, utc_to)
         
@@ -93,9 +95,10 @@ class MetaTraderData:
         result = result.set_index('deep')
         result = result.sort_index(ascending=False)
 
+        
         return result
 
-    def open_buy(self, symbol, vol) -> tuple[float, int]:
+    def open_buy(self, symbol:str, vol:float) -> tuple[float, int]:
 
         price = mt5.symbol_info_tick(symbol).ask
 
@@ -112,10 +115,13 @@ class MetaTraderData:
         }
 
         send = mt5.order_send(request)
+        order_number = send[2]
+
+        print(send, order_number)
+        vol = list(send)[0]
+        self.volume = vol
 
         ask_filled = send[4]
-        order_number = send[2]
-        
         return [ask_filled, order_number]
 
     def open_sell(self, symbol, vol) -> tuple[float, int]:
@@ -135,46 +141,84 @@ class MetaTraderData:
         }
 
         send = mt5.order_send(request)
-
-        bid_filled = send[4]
-        order_number = send[2]
         
+        order_number = send[2]
+        print(send, order_number)
+        self.volume = vol
+    	
+        bid_filled = send[5]
         return [bid_filled, order_number]
 
-    def close_position(self, symbol) -> dict:
 
-        #type = 0 : BUY
-        #type = 1 : SELL
+    def close_position(self, symbol:str, status:int) -> dict:
 
-        pos_info = mt5.positions_get(symbol = symbol)[0]
+            #type = 0 : BUY
+            #type = 1 : SELL
 
-        data = {'type':pos_info[5], 'volume':pos_info[9], 'price_open':pos_info[10], 
-                    'price_current':pos_info[13], 'profit_percent':pos_info[15]}
-        
-        #close buy position
-        if(data['type'] == 0): 
+            #close buy position
+            if(status == 0): 
+
+                price = mt5.symbol_info_tick(symbol).bid
+                print(price)
+               
+                request = {
+                    "action": mt5.TRADE_ACTION_DEAL,
+                    "symbol": symbol,
+                    "volume": vol,
+                    "type": mt5.ORDER_TYPE_SELL,
+                    "price": price,
+                    "magic": 234000,
+                    "deviation":0,
+                    "magic":0,
+                    "comment": "python script open",
+                    "type_time": mt5.ORDER_TIME_GTC,
+                    "type_filling": mt5.ORDER_FILLING_RETURN, #Tem que tomar cuidado com essa flag aqui, pq ela executa dependendo do volume
+                    }
+
+                send = mt5.order_send(request)
+
+                print(send)
+
+                
+                order_number = send[2]
+                #print(send, order_number)
+
+
+                bid_filled = send[4]
+                self.sell_order = order_number
+                return [bid_filled, order_number]
+
+
+            if (status == 1):
+                
+                
+                price = mt5.symbol_info_tick(symbol).bid
+                vol = self.buy_order
+
+                request = {
+                    "action": mt5.TRADE_ACTION_DEAL,
+                    "symbol": symbol,
+                    "volume": vol,
+                    "type": mt5.ORDER_TYPE_BUY,
+                    "price": price,
+                    "magic": 234000,
+                    "deviation":0,
+                    "magic":0,
+                    "comment": "python script open",
+                    "type_time": mt5.ORDER_TIME_GTC,
+                    "type_filling": mt5.ORDER_FILLING_RETURN, #Tem que tomar cuidado com essa flag aqui, pq ela executa dependendo do volume
+                    }
+
+                send = mt5.order_send(request)
+
+                print(send)
+
+                order_number = send[2]
+
+                ask_filled = send[5]
+                self.sell_order = order_number
+                return [ask_filled, order_number]
             
-            self.open_sell(symbol, data['volume'])
-            return data
+            return None
 
-        if (data['type'] == 1):
-            
-            self.open_buy(symbol, data['volume'])
-            return data
-        
-        return None
-
-        
-
-        
-
-
-
-
-
-    
-        
-
-
-
-
+   
