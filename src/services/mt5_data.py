@@ -3,6 +3,8 @@ import pandas as pd
 from datetime import datetime 
 import numpy as np
 
+from collections import deque
+
 
 _login = 10084329
 _password = 'Dy41KitG'
@@ -10,10 +12,13 @@ _server = 'B2Broker-MetaTrader5'
 
 class MetaTraderData:
 
+
     def __init__(self, _login: int, _password = str, _server = str):
         self.login = _login
         self.password = _password
         self.server = _server
+
+        self._order_queue = deque()
 
         try:
             mt5.initialize(login = self.login, password = self.password, server = self.server)
@@ -24,9 +29,22 @@ class MetaTraderData:
     def __str__(self):
         return 'MetaTraderAPI'
     
+    
+    def queue_append(self, data):
+        self._order_queue.append(data)
+    def queue_pop(self):
+        if self._order_queue:
+            return self._order_queue.popleft()
+        else:
+            return None
+        
+    
     def current_price(self, symbol) -> tuple[float, float]:
-        data = mt5.symbol_info_tick(symbol)
+    
+        data = mt5.symbol_info(symbol)
+    
         data = data._asdict()
+        
         data_bid = float(data['bid'])
         data_ask = float(data['ask'])
 
@@ -75,7 +93,7 @@ class MetaTraderData:
 
         for data in book:
 
-            if(data[0] == 1):
+            if(data[0] == 1): 
                 book_ask['price'].append(data[1])
                 book_ask['volume'].append(data[2])
             if(data[0] == 2):
@@ -107,8 +125,11 @@ class MetaTraderData:
             "symbol": symbol,
             "volume": vol,
             "type": mt5.ORDER_TYPE_BUY,
+            "sl": 0.0,
+            "tp": 0.0,
+            "deviation": 20,
             "price": price,
-            "magic": 234000,
+            "magic": 100,
             "comment": "python script open",
             "type_time": mt5.ORDER_TIME_GTC,
             "type_filling": mt5.ORDER_FILLING_IOC, 
@@ -118,6 +139,9 @@ class MetaTraderData:
         order_number = send[2]
 
         print(send, order_number)
+
+        self._order_queue.append({'number':order_number, 'type':'buy', 'volume':vol, 'symbol':symbol})
+
         vol = list(send)[0]
         self.volume = vol
 
@@ -134,91 +158,63 @@ class MetaTraderData:
             "volume": vol,
             "type": mt5.ORDER_TYPE_SELL,
             "price": price,
-            "magic": 234000,
+            "deviation": 20,
+            "sl": 0.0,
+            "tp": 0.0,
+            "magic": 100,
             "comment": "python script open",
             "type_time": mt5.ORDER_TIME_GTC,
-            "type_filling": mt5.ORDER_FILLING_RETURN,
+            "type_filling": mt5.ORDER_FILLING_IOC,
         }
 
         send = mt5.order_send(request)
         
         order_number = send[2]
         print(send, order_number)
+
+        self._order_queue.append({'number':order_number, 'type':'sell', 'volume':vol, 'symbol':symbol})
+
         self.volume = vol
     	
         bid_filled = send[5]
         return [bid_filled, order_number]
 
 
-    def close_position(self, symbol:str, status:int) -> dict:
+    def close_position(self) -> dict:
 
             #type = 0 : BUY
             #type = 1 : SELL
 
-            #close buy position
-            if(status == 0): 
+            close_data = self._order_queue.popleft()
 
-                price = mt5.symbol_info_tick(symbol).bid
-                print(price)
-               
-                request = {
+            status = close_data['type']
+            vol = close_data['volume']
+            symbol = close_data['symbol']
+            number = close_data['number']
+
+            request = {
                     "action": mt5.TRADE_ACTION_DEAL,
                     "symbol": symbol,
+                    "position":number,
                     "volume": vol,
-                    "type": mt5.ORDER_TYPE_SELL,
-                    "price": price,
+                    "type": mt5.ORDER_TYPE_SELL if status=='buy' else mt5.ORDER_TYPE_BUY,
+                    "price": mt5.symbol_info_tick(symbol).bid if status=='buy' else mt5.symbol_info_tick(symbol).ask,
+                    "sl": 0.0,
+                    "tp": 0.0,
                     "magic": 234000,
-                    "deviation":0,
-                    "magic":0,
-                    "comment": "python script open",
+                    "deviation":20,
+                    "magic":100, 
+                    "comment": "close position",
                     "type_time": mt5.ORDER_TIME_GTC,
-                    "type_filling": mt5.ORDER_FILLING_RETURN, 
+                    "type_filling": mt5.ORDER_FILLING_IOC, 
                     }
 
-                send = mt5.order_send(request)
+            send = mt5.order_send(request)
+            order_number = send[2]
+            print(send)
 
-                print(send)
+            bid_filled = send[4]
 
-                
-                order_number = send[2]
-                #print(send, order_number)
-
-
-                bid_filled = send[4]
-                self.sell_order = order_number
-                return [bid_filled, order_number]
-
-
-            if (status == 1):
-                
-                
-                price = mt5.symbol_info_tick(symbol).bid
-                vol = self.buy_order
-
-                request = {
-                    "action": mt5.TRADE_ACTION_DEAL,
-                    "symbol": symbol,
-                    "volume": vol,
-                    "type": mt5.ORDER_TYPE_BUY,
-                    "price": price,
-                    "magic": 234000,
-                    "deviation":0,
-                    "magic":0,
-                    "comment": "python script open",
-                    "type_time": mt5.ORDER_TIME_GTC,
-                    "type_filling": mt5.ORDER_FILLING_RETURN,
-                    }
-
-                send = mt5.order_send(request)
-
-                print(send)
-
-                order_number = send[2]
-
-                ask_filled = send[5]
-                self.sell_order = order_number
-                return [ask_filled, order_number]
-            
-            return None
+            return [bid_filled, order_number]
 
    
