@@ -1,4 +1,3 @@
-```markdown
 # MetaTrader5-Python
 
 This is a README file for the project MetaTrader5-Python". The project provides functionality to interact with the MetaTrader 5 (MT5) platform using the MetaTrader5 library. It allows users to fetch current prices, retrieve historical data, access order book information, place buy and sell orders, and close positions. This README provides an overview of the project and explains how to use its different components.
