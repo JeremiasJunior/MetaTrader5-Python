@@ -107,54 +107,6 @@ print(result)  # Output: [filled_volume, order_number]
 
 Please note that the above code examples assume that the MetaTrader5 library is properly installed and the connection to the MT5 server is established.
 
-## Contributing
-
-If you want to contribute to the MetaTrader5-Python" project, you are welcome to submit bug reports, feature requests, or pull requests. To do so, follow these steps:
-
-1. Fork the project repository on GitHub.
-2. Create a new branch for your changes.
-3. Make the necessary modifications or additions.
-4. Commit your changes and push them to your fork.
-5. Submit a pull request to the main project repository.
-
-## License
-
-The MetaTrader5-Python" project is licensed under the [MIT License](LICENSE). Please review the license file for more details.
-
-## Contact Information
-
-For any questions or inquiries, please contact the project maintainer:
-
-- John Doe: john@example.com
-
-## Troubleshooting
-
-If you encounter any issues or error messages while using the MetaTrader5-Python" project, please refer to the following troubleshooting steps:
-
-1. Ensure that all the dependencies are properly installed and up to date.
-2. Double-check the connection to the MT5 server and ensure that it is functioning correctly.
-3. Review the project documentation and code to ensure proper usage and configuration.
-
-## Frequently Asked Questions
-
-Q: What is the purpose of the MetaTrader5-Python" project?
-A: The MetaTrader5-Python" project aims to provide a convenient interface for interacting with the MetaTrader 5 platform and performing various trading operations.
-
-Q: Can I use this project for live trading?
-A: Yes, this project can be used for live trading by connecting to a compatible MT5 server. However, please exercise caution and ensure that you understand the risks involved in trading.
-
-## Changelog
-
-- Version 1.0.0 (YYYY-MM-DD): Initial release of the MetaTrader5-Python" project.
-
-## Roadmap
-
-Here are some planned features and improvements for future versions of the MetaTrader5-Python" project:
-
-- Add support for additional trading operations.
-- Enhance error handling and exception management.
-- Improve documentation and code organization.
-
 ## Appendix
 
 For additional information and resources, refer to the following:
